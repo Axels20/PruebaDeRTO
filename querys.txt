@@ -1,0 +1,267 @@
+Informe: Desembolsos FTE 20XX (Prestamos)
+Trabajo: 358965
+Se utilizó caché de informes: No
+
+Número de columnas obtenidas:		11
+Número de tablas temporales:		3
+
+Número total de pasos:		7
+Número de pasos SQL:		7
+Número de pasos analíticos:		0
+
+Tablas abiertas:
+ANALISIS_DE_CONTRATOS
+ANALISIS_DE_CON_TOTALES
+ANO
+LU_SUBTIPO_PRODUCTO
+LU_SUB_PRODUCTO
+MES
+OFICINA_ADMINISTRATIVA
+REGION_OFICINA
+
+
+Control:
+select	a14.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	a13.ANO_ID  ANO_ID,
+	a12.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID,
+	sum(a11.MARCA_CONTRATO_NUEVO)  CANTIDADDECONTRATOSNUEVOSVIGENTES
+into #ZZMD00
+from	DMT_CON.ANALISIS_DE_CONTRATOS	a11
+	join	MSTRDW.LU_SUB_PRODUCTO	a12
+	  on 	(a11.PD_ID = a12.SUBPRODUCTOBG_ID)
+	join	ICORP.MES	a13
+	  on 	(a11.MSR_PRD_ID = a13.MSR_PRD_ID)
+	join	MSTRDW.OFICINA_ADMINISTRATIVA	a14
+	  on 	(a11.OFICINA_ADMINISTRATIVA_ID = a14.OFICINA_ADMINISTRATIVA_ID)
+where	(a14.OFICINA_ADMINISTRATIVA_ID not in (5528, 5555, 5489)
+ and a14.PRN_OU_IP_ID in (16179, 16180, 16181, 16182, 112339, 112340)
+ and a13.ANO_ID in (2017)
+ and (a12.PRODUCTOBG_ID in (43)
+ or a12.PRODUCTOBG_ID in (49)
+ or a12.PRODUCTOBG_ID in (107, 108)
+ or (a12.PRODUCTOBG_ID in (48)
+ and a11.PROGRAMA_ID in (3513, 3515, 3495)))
+ and a11.AR_LCS_TP_ID not in (1166, 1169, 1118, 1164, 1125, 1126, 1129)
+ and a11.RNEW_F = 0)
+group by	 OFICINA_ADMINISTRATIVA_ID,
+	 ANO_ID,
+	 TIPOPRODUCTO2_ID 
+
+select	a14.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	a13.ANO_ID  ANO_ID,
+	a12.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID,
+	sum((Case when a11.MARCA_CONTRATO_NUEVO > 0.0 then (0.0 - a11.MONTO_DESEMBOLSO) else 0.0 end))  DESEMBOLSOMARCANUEVO
+into #ZZMD01
+from	DMT_CON.ANALISIS_DE_CON_TOTALES	a11
+	join	MSTRDW.LU_SUB_PRODUCTO	a12
+	  on 	(a11.PD_ID = a12.SUBPRODUCTOBG_ID)
+	join	ICORP.MES	a13
+	  on 	(a11.MSR_PRD_ID = a13.MSR_PRD_ID)
+	join	MSTRDW.OFICINA_ADMINISTRATIVA	a14
+	  on 	(a11.OFICINA_ADMINISTRATIVA_ID = a14.OFICINA_ADMINISTRATIVA_ID)
+where	(a14.OFICINA_ADMINISTRATIVA_ID not in (5528, 5555, 5489)
+ and a14.PRN_OU_IP_ID in (16179, 16180, 16181, 16182, 112339, 112340)
+ and a13.ANO_ID in (2017)
+ and (a12.PRODUCTOBG_ID in (43)
+ or a12.PRODUCTOBG_ID in (49)
+ or a12.PRODUCTOBG_ID in (107, 108)
+ or (a12.PRODUCTOBG_ID in (48)
+ and a11.PROGRAMA_ID in (3513, 3515, 3495))))
+group by	 OFICINA_ADMINISTRATIVA_ID,
+	 ANO_ID,
+	 TIPOPRODUCTO2_ID 
+
+select	pa11.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	pa11.ANO_ID  ANO_ID,
+	pa11.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID
+into #ZZOJ02
+from	#ZZMD00	pa11 
+union
+select	pa11.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	pa11.ANO_ID  ANO_ID,
+	pa11.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID
+from	#ZZMD01	pa11
+
+select	a14.PRN_OU_IP_ID  PRN_OU_IP_ID,
+	a17.REGION  REGION,
+	a14.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	a14.OFICINA_ADMINISTRATIVA  OFICINA_ADMINISTRATIVA,
+	a14.BR_NO  NUM_SUCURSAL,
+	a15.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID,
+	a15.TIPOPRODUCTO2  TIPOPRODUCTO2,
+	a16.ANO_ID  ANO_ID,
+	a16.ANO  ANO,
+	pa12.CANTIDADDECONTRATOSNUEVOSVIGENTES  CANTIDADDECONTRATOSNUEVOSVIGENTES,
+	pa13.DESEMBOLSOMARCANUEVO  DESEMBOLSOMARCANUEVO
+from	#ZZOJ02	pa11
+	left outer join	#ZZMD00	pa12
+	  on 	(pa11.ANO_ID = pa12.ANO_ID and 
+	pa11.OFICINA_ADMINISTRATIVA_ID = pa12.OFICINA_ADMINISTRATIVA_ID and 
+	pa11.TIPOPRODUCTO2_ID = pa12.TIPOPRODUCTO2_ID)
+	left outer join	#ZZMD01	pa13
+	  on 	(pa11.ANO_ID = pa13.ANO_ID and 
+	pa11.OFICINA_ADMINISTRATIVA_ID = pa13.OFICINA_ADMINISTRATIVA_ID and 
+	pa11.TIPOPRODUCTO2_ID = pa13.TIPOPRODUCTO2_ID)
+	join	MSTRDW.OFICINA_ADMINISTRATIVA	a14
+	  on 	(pa11.OFICINA_ADMINISTRATIVA_ID = a14.OFICINA_ADMINISTRATIVA_ID)
+	join	MSTRDW.LU_SUBTIPO_PRODUCTO	a15
+	  on 	(pa11.TIPOPRODUCTO2_ID = a15.TIPOPRODUCTO2_ID)
+	join	MSTRDW.ANO	a16
+	  on 	(pa11.ANO_ID = a16.ANO_ID)
+	join	MSTRDW.REGION_OFICINA	a17
+	  on 	(a14.PRN_OU_IP_ID = a17.PRN_OU_IP_ID)
+
+
+drop table #ZZMD00
+
+drop table #ZZMD01
+
+drop table #ZZOJ02
+
+
+[Pasos de cálculo en el motor analítico:
+	1.  Realizar tabulación cruzada
+]
+
+
+----------------------------------------------------
+
+
+Informe: Desembolsos FTE 20XX (Tarjetas)
+Se utilizó caché de informes: Sí
+
+Hora de inicio de ejecución del motor de consultas:		03/25/2019 04:46:42 PM
+Hora de finalización de ejecución del motor de consultas:		03/25/2019 04:48:09 PM
+
+Tiempo de generación de consulta:		0:00:00.04
+Tiempo total transcurrido en el motor de consultas:		0:01:26.96
+	Suma de tiempo de ejecución de consulta:		0:01:08.56
+	Tiempo de recuperación y procesamiento de datos total:		0:00:18.14
+		Tiempo de transferencia de datos desde origen u orígenes de datos total:		0:00:18.12
+	Tiempo de procesamiento analítico total:		0:00:00.00
+	Tiempo de otros procesamientos total:		0:00:00.26
+
+???		0:00:00.00
+???		0:00:00.00
+Tiempo total de publicación de cubos		0:00:00.00
+
+
+Número de filas obtenidas:		8677
+Número de columnas obtenidas:		12
+Número de tablas temporales:		1
+
+Número total de pasos:		4
+Número de pases de consulta de origen de datos:		4
+Número de pases de consulta analítica:		0
+
+Usuario de base de datos:		MSTRDW
+Instancia de BD:		SYB_DWHPROD
+
+Tablas abiertas:
+LU_SUB_PRODUCTO	
+ANO	
+MES	
+ANALISIS_DE_CONTRATOS	
+OFICINA_ADMINISTRATIVA	
+LU_PRODUCTO	
+VW_MERCADEO_CONTRATOS	
+
+
+Control:
+
+Paso0 - 	Hora de inicio de pases de consulta:		03/25/2019 04:46:42 PM
+	Hora de finalización de pases de consulta:		03/25/2019 04:47:50 PM
+	Ejecución de la consulta:	0:01:08.46
+	Recuperación y procesamiento de datos:	0:00:00.00
+	  Transferencia de datos desde origen u orígenes de datos:	0:00:00.00
+	Otro procesamiento:	0:00:00.06
+select	a12.PRODUCTOBG_ID  PRODUCTOBG_ID,
+	a13.ANO_ID  ANO_ID,
+	a11.AR_ID  AR_ID,
+	a14.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID
+into #TOEJCPRL6MQ000
+from	DMT_CON.ANALISIS_DE_CONTRATOS	a11
+	join	MSTRDW.LU_SUB_PRODUCTO	a12
+	  on 	(a11.PD_ID = a12.SUBPRODUCTOBG_ID)
+	join	ICORP.MES	a13
+	  on 	(a11.MSR_PRD_ID = a13.MSR_PRD_ID)
+	join	MSTRDW.OFICINA_ADMINISTRATIVA	a14
+	  on 	(a11.OFICINA_ADMINISTRATIVA_ID = a14.OFICINA_ADMINISTRATIVA_ID)
+where	(a14.OFICINA_ADMINISTRATIVA_ID not in (5528, 5555, 5489)
+ and a14.PRN_OU_IP_ID in (16179, 16180, 16181, 16182, 112339, 112340)
+ and a13.ANO_ID in (2017)
+ and a12.TIPOPRODUCTO2_ID in (76))
+group by	 PRODUCTOBG_ID,
+	 ANO_ID,
+	 AR_ID,
+	 OFICINA_ADMINISTRATIVA_ID
+having	sum(a11.MARCA_ACTIVACION_ID) > 0.0 
+
+Paso1 - 	Hora de inicio de pases de consulta:		03/25/2019 04:47:50 PM
+	Hora de finalización de pases de consulta:		03/25/2019 04:48:09 PM
+	Ejecución de la consulta:	0:00:00.03
+	Recuperación y procesamiento de datos:	0:00:18.14
+	  Transferencia de datos desde origen u orígenes de datos:	0:00:18.12
+	Otro procesamiento:	0:00:00.12
+	Rows selected: 8677
+select	pa14.OFICINA_ADMINISTRATIVA_ID  OFICINA_ADMINISTRATIVA_ID,
+	max(a15.OFICINA_ADMINISTRATIVA)  OFICINA_ADMINISTRATIVA,
+	max(a15.BR_NO)  NUM_SUCURSAL,
+	a12.TIPOPRODUCTO2_ID  TIPOPRODUCTO2_ID,
+	max(a12.TIPOPRODUCTO2)  TIPOPRODUCTO2,
+	pa14.AR_ID  AR_ID,
+	max(a18.NO_DE_OPERACION)  NO_DE_OPERACION,
+	a13.ANO_ID  ANO_ID,
+	max(a17.ANO)  ANO,
+	a12.PRODUCTOBG_ID  PRODUCTOBG_ID,
+	max(a16.PRODUCTOBG)  PRODUCTOBG,
+	sum(a11.MARCA_ACTIVACION_ID)  CANTIDADDEACTIVACIONESTARJETASDECRDITO
+from	DMT_CON.ANALISIS_DE_CONTRATOS	a11
+	join	MSTRDW.LU_SUB_PRODUCTO	a12
+	  on 	(a11.PD_ID = a12.SUBPRODUCTOBG_ID)
+	join	ICORP.MES	a13
+	  on 	(a11.MSR_PRD_ID = a13.MSR_PRD_ID)
+	join	#TOEJCPRL6MQ000	pa14
+	  on 	(a11.AR_ID = pa14.AR_ID and 
+	a11.OFICINA_ADMINISTRATIVA_ID = pa14.OFICINA_ADMINISTRATIVA_ID and 
+	a12.PRODUCTOBG_ID = pa14.PRODUCTOBG_ID and 
+	a13.ANO_ID = pa14.ANO_ID)
+	join	MSTRDW.OFICINA_ADMINISTRATIVA	a15
+	  on 	(pa14.OFICINA_ADMINISTRATIVA_ID = a15.OFICINA_ADMINISTRATIVA_ID)
+	join	MSTRDW.LU_PRODUCTO	a16
+	  on 	(a12.PRODUCTOBG_ID = a16.PRODUCTOBG_ID)
+	join	MSTRDW.ANO	a17
+	  on 	(a13.ANO_ID = a17.ANO_ID)
+	join	MSTRDW.VW_MERCADEO_CONTRATOS	a18
+	  on 	(pa14.AR_ID = a18.AR_ID)
+where	(pa14.OFICINA_ADMINISTRATIVA_ID not in (5528, 5555, 5489)
+ and a15.PRN_OU_IP_ID in (16179, 16180, 16181, 16182, 112339, 112340)
+ and a13.ANO_ID in (2017)
+ and a12.TIPOPRODUCTO2_ID in (76))
+group by	 OFICINA_ADMINISTRATIVA_ID,
+	 TIPOPRODUCTO2_ID,
+	 AR_ID,
+	 ANO_ID,
+	 PRODUCTOBG_ID
+
+Paso2 - 	Hora de inicio de pases de consulta:		03/25/2019 04:48:09 PM
+	Hora de finalización de pases de consulta:		03/25/2019 04:48:09 PM
+	Ejecución de la consulta:	0:00:00.00
+	Recuperación y procesamiento de datos:	0:00:00.00
+	  Transferencia de datos desde origen u orígenes de datos:	0:00:00.00
+	Otro procesamiento:	0:00:00.03
+[Populate Report Data]
+
+Paso3 - 	Hora de inicio de pases de consulta:		03/25/2019 04:48:09 PM
+	Hora de finalización de pases de consulta:		03/25/2019 04:48:09 PM
+	Ejecución de la consulta:	0:00:00.06
+	Recuperación y procesamiento de datos:	0:00:00.00
+	  Transferencia de datos desde origen u orígenes de datos:	0:00:00.00
+	Otro procesamiento:	0:00:00.04
+drop table #TOEJCPRL6MQ000
+
+[Pasos de cálculo en el motor analítico:
+	1.  Realizar agregación dinámica a <Contrato, Año, 5. Producto>
+	2.  Calcular subtotal: <Total> 
+	3.  Realizar tabulación cruzada
+]
